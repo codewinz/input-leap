@@ -17,6 +17,7 @@
  */
 
 #include "platform/MSWindowsWatchdog.h"
+#include "common/win32/encoding_utilities.h"
 
 #include "ipc/IpcLogOutputter.h"
 #include "ipc/IpcServer.h"
@@ -332,16 +333,18 @@ BOOL MSWindowsWatchdog::doStartProcessAsSelf(std::string& command)
         CREATE_NO_WINDOW |
         CREATE_UNICODE_ENVIRONMENT;
 
-    STARTUPINFO si;
-    ZeroMemory(&si, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-    si.lpDesktop = const_cast<char*>("winsta0\\Default"); // TODO: maybe this should be \winlogon if we have logonui.exe?
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.lpDesktop = const_cast<wchar_t*>(L"winsta0\\Default"); // TODO: maybe this should be \winlogon if we have logonui.exe?
     si.hStdError = m_stdOutWrite;
     si.hStdOutput = m_stdOutWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     LOG_INFO("starting new process as self");
-    return CreateProcess(nullptr, LPSTR(command.c_str()), nullptr, nullptr, FALSE, creationFlags, nullptr, nullptr, &si, &m_processInfo);
+    auto wide_command = utf8_to_win_char(command);
+    return CreateProcessW(nullptr, wide_command.data(), nullptr, nullptr, FALSE,
+                          creationFlags, nullptr, nullptr, &si, &m_processInfo);
 }
 
 BOOL MSWindowsWatchdog::doStartProcessAsUser(std::string& command, HANDLE userToken,
@@ -350,10 +353,10 @@ BOOL MSWindowsWatchdog::doStartProcessAsUser(std::string& command, HANDLE userTo
     // clear, as we're reusing process info struct
     ZeroMemory(&m_processInfo, sizeof(PROCESS_INFORMATION));
 
-    STARTUPINFO si;
-    ZeroMemory(&si, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-    si.lpDesktop = const_cast<char*>("winsta0\\Default"); // TODO: maybe this should be \winlogon if we have logonui.exe?
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.lpDesktop = const_cast<wchar_t*>(L"winsta0\\Default"); // TODO: maybe this should be \winlogon if we have logonui.exe?
     si.hStdError = m_stdOutWrite;
     si.hStdOutput = m_stdOutWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
@@ -372,7 +375,8 @@ BOOL MSWindowsWatchdog::doStartProcessAsUser(std::string& command, HANDLE userTo
 
     // re-launch in current active user session
     LOG_INFO("starting new process as privileged user");
-    BOOL createRet = CreateProcessAsUser(userToken, nullptr, LPSTR(command.c_str()),
+    auto wide_command = utf8_to_win_char(command);
+    BOOL createRet = CreateProcessAsUserW(userToken, nullptr, wide_command.data(),
                                          sa, nullptr, TRUE, creationFlags,
                                          environment, nullptr, &si, &m_processInfo);
 

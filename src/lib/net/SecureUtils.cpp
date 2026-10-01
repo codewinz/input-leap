@@ -137,7 +137,7 @@ FingerprintData get_ssl_cert_fingerprint(X509* cert, FingerprintType type)
 
 FingerprintData get_pem_file_cert_fingerprint(const std::string& path, FingerprintType type)
 {
-    auto fp = fopen_utf8_path(path, "r");
+    auto fp = fopen_utf8_path(fs::u8path(path), "r");
     if (!fp) {
         throw std::runtime_error("Could not open certificate path");
     }
@@ -201,7 +201,7 @@ void generate_pem_self_signed_cert(const std::string& path)
 
     X509_sign(cert, private_key, EVP_sha256());
 
-    auto fp = fopen_utf8_path(path.c_str(), "w");
+    auto fp = fopen_utf8_path(fs::u8path(path), "w");
     if (!fp) {
         throw std::runtime_error("Could not open certificate output path");
     }

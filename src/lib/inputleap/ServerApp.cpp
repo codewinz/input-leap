@@ -260,7 +260,8 @@ bool ServerApp::loadConfig(const std::string& pathname)
     try {
         // load configuration
         LOG_DEBUG("opening configuration \"%s\"", pathname.c_str());
-        std::ifstream configStream(pathname.c_str());
+        std::ifstream configStream;
+        inputleap::open_utf8_path(configStream, inputleap::fs::u8path(pathname));
         if (!configStream.is_open()) {
             // report failure to open configuration as a debug message
             // since we try several paths and we expect some to be

@@ -23,3 +23,8 @@
 
 std::string win_wchar_to_utf8(const WCHAR* utfStr);
 std::vector<WCHAR> utf8_to_win_char(const std::string& str);
+
+// Windows' narrow argv uses the system code page. Parse the original UTF-16
+// command line instead, preserving UTF-8 throughout the application.
+std::vector<std::string> win_command_line_to_utf8(const WCHAR* command_line);
+int win_utf8_main(int (*main_function)(int, char**));

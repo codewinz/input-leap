@@ -20,6 +20,7 @@
 #include "arch/win32/ArchDaemonWindows.h"
 #include "base/Log.h"
 #include "common/Version.h"
+#include "common/win32/encoding_utilities.h"
 
 #include <Wtsapi32.h>
 #pragma warning(disable: 4099)
@@ -235,9 +236,11 @@ ArchMiscWindows::setValue(HKEY key,
         // TODO: throw exception
         return;
     }
-    RegSetValueEx(key, name, 0, REG_SZ,
-                                reinterpret_cast<const BYTE*>(value.c_str()),
-                                (DWORD)value.size() + 1);
+    auto wide_name = utf8_to_win_char(name);
+    auto wide_value = utf8_to_win_char(value);
+    RegSetValueExW(key, wide_name.data(), 0, REG_SZ,
+                  reinterpret_cast<const BYTE*>(wide_value.data()),
+                  static_cast<DWORD>(wide_value.size() * sizeof(WCHAR)));
 }
 
 void
@@ -308,7 +311,21 @@ ArchMiscWindows::readBinaryOrString(HKEY key, const TCHAR* name, DWORD type)
 std::string
 ArchMiscWindows::readValueString(HKEY key, const TCHAR* name)
 {
-    return readBinaryOrString(key, name, REG_SZ);
+    auto wide_name = utf8_to_win_char(name);
+    DWORD type = 0;
+    DWORD size = 0;
+    auto result = RegQueryValueExW(key, wide_name.data(), 0, &type, nullptr, &size);
+    if (result != ERROR_SUCCESS || type != REG_SZ || size % sizeof(WCHAR) != 0) {
+        return {};
+    }
+    // Registry strings are not guaranteed to include a terminating null.
+    std::vector<WCHAR> value(size / sizeof(WCHAR) + 1, 0);
+    result = RegQueryValueExW(key, wide_name.data(), 0, &type,
+                             reinterpret_cast<BYTE*>(value.data()), &size);
+    if (result != ERROR_SUCCESS || type != REG_SZ) {
+        return {};
+    }
+    return win_wchar_to_utf8(value.data());
 }
 
 std::string

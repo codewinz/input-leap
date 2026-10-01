@@ -32,12 +32,15 @@ main(int argc, char** argv)
 #elif SYSAPI_WIN32
 
 #include "common/win32/winapi.h"
+#include "common/win32/encoding_utilities.h"
 
 int WINAPI
 WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    inputleap::DaemonApp app;
-    return app.run(__argc, __argv);
+    return win_utf8_main([](int argc, char** argv) {
+        inputleap::DaemonApp app;
+        return app.run(argc, argv);
+    });
 }
 
 #endif

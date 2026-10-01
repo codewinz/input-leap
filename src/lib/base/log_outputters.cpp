@@ -262,7 +262,8 @@ FileLogOutputter::write(ELevel level, const char *message)
     bool moveFile = false;
 
     std::ofstream m_handle;
-    inputleap::open_utf8_path(m_handle, m_fileName, std::fstream::app);
+    auto path = inputleap::fs::u8path(m_fileName);
+    inputleap::open_utf8_path(m_handle, path, std::fstream::app);
     if (m_handle.is_open() && m_handle.fail() != true) {
         m_handle << message << std::endl;
 
@@ -276,8 +277,10 @@ FileLogOutputter::write(ELevel level, const char *message)
 
     if (moveFile) {
         std::string oldLogFilename = inputleap::string::sprintf("%s.1", m_fileName.c_str());
-        remove(oldLogFilename.c_str());
-        rename(m_fileName.c_str(), oldLogFilename.c_str());
+        auto oldPath = inputleap::fs::u8path(oldLogFilename);
+        std::error_code error;
+        inputleap::fs::remove(oldPath, error);
+        inputleap::fs::rename(path, oldPath, error);
     }
 
     return true;

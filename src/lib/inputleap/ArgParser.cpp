@@ -45,7 +45,7 @@ XArgvParserError::XArgvParserError(const char *fmt, ...) :
 }
 
 Argv::Argv(int argc, const char* const* argv) :
-    // FIXME: we assume UTF-8 encoding, but on Windows this is not correct
+    // Executable entry points normalize Windows arguments to UTF-8.
     m_exename(inputleap::fs::u8path(argv[0]).filename().u8string())
 {
     for (int i = 1; i < argc; i++)

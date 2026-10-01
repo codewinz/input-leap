@@ -84,3 +84,13 @@ target_link_libraries(integtests
 add_test(NAME integrationtests
          COMMAND integtests
          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+if (BUILD_MSWINDOWS)
+    find_package(Python3 QUIET COMPONENTS Interpreter)
+    if (Python3_Interpreter_FOUND)
+        add_test(NAME windows_unicode_paths
+                 COMMAND "${Python3_EXECUTABLE}"
+                         "${CMAKE_CURRENT_SOURCE_DIR}/windows_unicode_paths.py"
+                         "$<TARGET_FILE_DIR:input-leapc>")
+    endif()
+endif()

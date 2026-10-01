@@ -23,6 +23,7 @@
 
 #if WINAPI_MSWINDOWS
 #include "MSWindowsClientTaskBarReceiver.h"
+#include "common/win32/encoding_utilities.h"
 #endif
 
 namespace inputleap {
@@ -59,5 +60,9 @@ int client_main(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
+#if SYSAPI_WIN32
+    return win_utf8_main(inputleap::client_main);
+#else
     return inputleap::client_main(argc, argv);
+#endif
 }
